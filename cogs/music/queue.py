@@ -6,11 +6,12 @@ class MusicQueue:
         self.stop_flag = False
         self.processed_urls = set()
 
-    def add(self, url, title):
-        if not self.stop_flag and url not in [item[0] for item in self.queue]:
-            self.queue.append((url, title))
+    def add(self, path, title):
+        if not self.stop_flag and path not in [item[0] for item in self.queue]:
+            self.queue.append((path, title))
             return True
         return False
+
 
     def next(self):
         return self.queue.pop(0) if self.queue else None
