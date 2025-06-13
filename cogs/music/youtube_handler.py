@@ -12,14 +12,12 @@ YDL_OPTIONS = {
     'logtostderr': False,
 }
 
-FFMPEG_BIN = "./bin/ffmpeg"
-FFPROBE_BIN = "./bin/ffprobe"
-
 FFMPEG_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn -loglevel panic',
-    'executable': FFMPEG_BIN
+    'executable': 'ffmpeg'  # fa riferimento all'eseguibile globale
 }
+
 
 async def extract_info(search):
     def _extract():
