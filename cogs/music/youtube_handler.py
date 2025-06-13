@@ -15,8 +15,10 @@ YDL_OPTIONS = {
 FFMPEG_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn -loglevel panic',
-    'executable': 'ffmpeg'  # fa riferimento all'eseguibile globale
+    # Non specificare path assoluto, lascia ffmpeg nel PATH di sistema
+    'executable': 'ffmpeg'
 }
+
 
 
 async def extract_info(search):
