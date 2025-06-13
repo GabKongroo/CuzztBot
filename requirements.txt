@@ -1,0 +1,6 @@
+discord.py==2.5.2
+yt-dlp==2025.3.31
+aiohttp==3.11.16
+python-dotenv==1.1.0
+
+
