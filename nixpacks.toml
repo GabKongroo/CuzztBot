@@ -1,3 +1,0 @@
-[packages]
-# aggiungi ffmpeg al sistema
-system = ["ffmpeg"]
