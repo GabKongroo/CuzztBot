@@ -1,19 +1,19 @@
-# Usa un'immagine base Python ufficiale
-FROM python:3.13-slim
+FROM python:3.12-slim
 
-# Aggiorna apt e installa ffmpeg
-RUN apt-get update && apt-get install -y ffmpeg && apt-get clean
+# Install ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
-# Crea la cartella dell'app
 WORKDIR /app
 
-# Copia requirements.txt e installa dipendenze
-COPY requirements.txt .
+# Copia tutti i file del progetto
+COPY . /app
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Crea e attiva virtualenv, installa dipendenze
+RUN python -m venv /opt/venv && \
+    /bin/bash -c "source /opt/venv/bin/activate && pip install -r requirements.txt"
 
-# Copia il codice
-COPY . .
+# Aggiungi la virtualenv al PATH
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Comando per lanciare il bot
+# Comando di avvio semplice
 CMD ["python", "bot.py"]
