@@ -2,15 +2,19 @@ import yt_dlp
 import asyncio
 
 YDL_OPTIONS = {
-    'format': 'bestaudio/best',
-    'extractaudio': True,
-    'audioquality': 1,
-    'outtmpl': 'downloads/%(id)s.%(ext)s',
-    'restrictfilenames': True,
-    'noplaylist': False,
-    'quiet': True,
-    'logtostderr': False,
+    "format": "bestaudio[ext=m4a]/bestaudio/best",
+    "quiet": True,
+    "no_warnings": True,
+    "default_search": "ytsearch",
+    "source_address": "0.0.0.0",
+    "outtmpl": "-",
+    "postprocessors": [{
+        "key": "FFmpegExtractAudio",
+        "preferredcodec": "mp3",
+        "preferredquality": "64",  # audio a 64 kbps
+    }]
 }
+
 
 FFMPEG_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
