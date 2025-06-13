@@ -5,6 +5,7 @@ import asyncio
 from cogs.music import music_controller  
 from dotenv import load_dotenv
 import subprocess, logging
+import ctypes.util
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
 try:
@@ -13,12 +14,15 @@ try:
 except Exception as e:
     logging.error("FFmpeg NON trovato o non funziona: " + str(e))
 
+print("[DEBUG] Ricerca libopus:", ctypes.util.find_library('opus'))
+
 if not discord.opus.is_loaded():
     try:
-        discord.opus.load_opus("libopus.so")
+        discord.opus.load_opus('libopus.so.0')  # Versione più comune
         print("[INFO] Opus caricato correttamente.")
     except Exception as e:
         print(f"[ERROR] Impossibile caricare Opus: {e}")
+
 
 
 
