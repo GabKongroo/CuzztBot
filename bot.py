@@ -16,12 +16,18 @@ except Exception as e:
 
 print("[DEBUG] Ricerca libopus:", ctypes.util.find_library('opus'))
 
+# Aggiungiamo il path Nix tipico alle librerie dinamiche
+os.environ["LD_LIBRARY_PATH"] = "/lib:/usr/lib:/usr/lib/x86_64-linux-gnu:/nix/var/nix/profiles/default/lib"
+
+print("[DEBUG] Ricerca libopus:", ctypes.util.find_library('opus'))
+
 if not discord.opus.is_loaded():
     try:
-        discord.opus.load_opus('libopus.so.0')  # Versione più comune
+        discord.opus.load_opus('libopus.so')
         print("[INFO] Opus caricato correttamente.")
     except Exception as e:
         print(f"[ERROR] Impossibile caricare Opus: {e}")
+
 
 
 
