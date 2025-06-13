@@ -1,19 +1,13 @@
 import asyncio
 import discord
 import urllib
-import yt_dlp
-from yt_dlp import YoutubeDL
 from .queue import MusicQueue  
-from .youtube_handler import *
-
-
+from .youtube_handler import extract_info
 
 class Play:
     def __init__(self, client):
         self.client = client
         self.music_queue = MusicQueue() 
-        self.extract_info = extract_info
-        
 
     async def play(self, ctx, *, search):
         self.music_queue.stop_flag = False  
@@ -41,123 +35,26 @@ class Play:
                 is_mix = playlist_id.startswith("RD")
                 
                 if is_mix:
-                    # Playlist Mix
-                    playlist_url = search  # Usa direttamente l'URL passato nel comando
                     await ctx.send("⚠️ Hai inserito una playlist Mix di YouTube.\n🎲 I contenuti potrebbero essere casuali.")
-
-                    flat_options = YDL_OPTIONS.copy()
-                    flat_options.update({
-                        'extract_flat': True,
-                        'quiet': False,
-                        'playlistend': 30
-                    })
-
-                    def _extract_mix_flat():
-                        with yt_dlp.YoutubeDL(flat_options) as ydl:
-                            return ydl.extract_info(playlist_url, download=False)
-
-                    mix_info = await asyncio.to_thread(_extract_mix_flat)
-
-                    if not mix_info or 'entries' not in mix_info:
-                        await loading_msg.edit(content="❌ Errore nel caricamento della playlist mix.")
-                        return
-
-                    playlist_entries = mix_info['entries'][:30]
-                    await loading_msg.edit(content=f"📃 Mix trovato con {len(playlist_entries)} brani. Avvio...")
-
-                    for index, entry in enumerate(playlist_entries):
-                        if self.music_queue.stop_flag:
-                            print("[STOP] Interruzione richiesta. Blocco il caricamento Mix.")
-                            break
-
-                        video_id = entry.get('id')
-                        if not video_id:
-                            continue
-
-                        video_url = f"https://www.youtube.com/watch?v={video_id}"
-                        video_info = await self.extract_info(video_url)
-                        if not video_info:
-                            continue
-
-                        audio_url = video_info['url']
-                        video_title = video_info.get('title', 'Sconosciuto')
-
-                        # Aggiungi il controllo per evitare di aggiungere brani se il flag stop è attivo
-                        if self.music_queue.stop_flag:
-                            print("[STOP] Interruzione richiesta. Non aggiungo alla coda.")
-                            break
-
-                        if audio_url not in self.music_queue.processed_urls:
-                            self.music_queue.queue.append((audio_url, video_title))
-                            self.music_queue.processed_urls.add(audio_url)
-                            print(f"[INFO] Aggiunto alla coda: {video_title}")
-
-                        if index == 0 and not ctx.voice_client.is_playing():
-                            await self.play_next(ctx)
+                    await loading_msg.edit(content="❌ Le playlist Mix non sono supportate al momento.")
                     return
-
                 else:
-                    # Playlist normale
-                    playlist_url = f"https://www.youtube.com/playlist?list={playlist_id}"
-
-                    flat_options = YDL_OPTIONS.copy()
-                    flat_options['extract_flat'] = True
-                    flat_options['quiet'] = True
-
-                    def _extract_flat():
-                        with yt_dlp.YoutubeDL(flat_options) as ydl:
-                            return ydl.extract_info(playlist_url, download=False)
-
-                    flat_info = await asyncio.to_thread(_extract_flat)
-
-                    if not flat_info or 'entries' not in flat_info:
-                        await loading_msg.edit(content="❌ Errore nel caricamento della playlist.")
-                        return
-
-                    playlist_entries = flat_info['entries']
-                    await loading_msg.edit(content=f"📃 Playlist trovata con {len(playlist_entries)} brani. Avvio...")
-
-                    for index, entry in enumerate(playlist_entries):
-                        if self.music_queue.stop_flag:
-                            print("[STOP] Interruzione richiesta. Blocco il caricamento Playlist.")
-                            break
-
-                        video_id = entry.get('id')
-                        video_url_full = f"https://www.youtube.com/watch?v={video_id}"
-                        video_info = await self.extract_info(video_url_full)
-
-                        if not video_info:
-                            continue
-
-                        audio_url = video_info['url']
-                        video_title = video_info.get('title', 'Sconosciuto')
-
-                        # Aggiungi il controllo per evitare di aggiungere brani se il flag stop è attivo
-                        if self.music_queue.stop_flag:
-                            print("[STOP] Interruzione richiesta. Non aggiungo alla coda.")
-                            break
-
-                        if audio_url not in self.music_queue.processed_urls:
-                            self.music_queue.queue.append((audio_url, video_title))
-                            self.music_queue.processed_urls.add(audio_url)
-                            print(f"[INFO] Aggiunto alla coda: {video_title}")
-
-                        if index == 0 and not ctx.voice_client.is_playing():
-                            await self.play_next(ctx)
+                    await loading_msg.edit(content="❌ Le playlist non sono ancora supportate in questa versione.")
+                    return
             else:
-                # Ricerca testuale
-                query = f"ytsearch:{search}"
-                info = await self.extract_info(query)
-                if not info or 'entries' not in info:
-                    await loading_msg.edit(content="❌ Nessun risultato trovato.")
+                query = f"ytsearch:{search}" if not is_url else search
+                info = await extract_info(query)
+                if not info or not info.get('filepath'):
+                    await loading_msg.edit(content="❌ Nessun risultato valido trovato.")
                     return
 
-                first_entry = info['entries'][0]
-                audio_url = first_entry['url']
-                video_title = first_entry.get('title', 'Sconosciuto')
+                filepath = info['filepath']
+                title = info.get('title', 'Sconosciuto')
 
-                if self.music_queue.add(audio_url, video_title):  # Usa la funzione add della MusicQueue
-                    print(f"[INFO] Aggiunto alla coda: {video_title}")
+                if self.music_queue.add(filepath, title):
+                    print(f"[INFO] Aggiunto alla coda: {title}")
+
+                await loading_msg.delete()
 
                 if not ctx.voice_client.is_playing():
                     await self.play_next(ctx)
@@ -174,12 +71,17 @@ class Play:
 
         next_song = self.music_queue.next()
         if next_song:
-            url, title = next_song
-            source = discord.FFmpegPCMAudio(url, **FFMPEG_OPTIONS)
-            ctx.voice_client.play(
-                source,
-                after=lambda e: self.client.loop.create_task(self.play_next(ctx))
-            )
+            filepath, title = next_song
+            source = discord.FFmpegPCMAudio(filepath)
+
+            def _after_play(e):
+                if filepath and os.path.exists(filepath):
+                    os.remove(filepath)
+                    print(f"[INFO] File temporaneo rimosso: {filepath}")
+                self.client.loop.create_task(self.play_next(ctx))
+
+            ctx.voice_client.play(source, after=_after_play)
+
             print(f"[INFO] Ora in riproduzione: {title}")
             await ctx.send(f'🎶 In riproduzione: **{title}**')
         else:
